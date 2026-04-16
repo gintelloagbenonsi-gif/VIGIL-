@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VIGIL — Tableau de Bord Conformité | Vista Group Holding</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --bg2: #111827;
+    --bg3: #1a2235;
+    --border: rgba(255,255,255,0.07);
+    --text: #e8eaf0;
+    --muted: #6b7a99;
+    --accent: #3b82f6;
+    --accent2: #06b6d4;
+    --green: #10b981;
+    --red: #ef4444;
+    --amber: #f59e0b;
+    --gray: #64748b;
+    --gold: #d4a843;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 40px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .logo-badge {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 800; color: white; letter-spacing: -1px;
+  }
+  .logo-text { line-height: 1.1; }
+  .logo-text .title { font-size: 18px; font-weight: 800; letter-spacing: 2px; color: var(--text); }
+  .logo-text .sub { font-size: 10px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; font-family: 'DM Mono', monospace; }
+  .header-right {
+    display: flex; align-items: center; gap: 16px;
+  }
+  .date-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px; color: var(--muted);
+    background: var(--bg3);
+    padding: 6px 12px; border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .update-dot {
+    width: 8px; height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(1.3)} }
+
+  /* FILTERS */
+  .filters {
+    padding: 20px 40px;
+    display: flex; align-items: center; gap: 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    flex-wrap: wrap;
+  }
+  .filter-label { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; font-family: 'DM Mono', monospace; margin-right: 4px; }
+  select, .week-btn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    outline: none;
+    appearance: none;
+  }
+  select:hover, .week-btn:hover { border-color: var(--accent); background: rgba(59,130,246,.08); }
+  select:focus { border-color: var(--accent); }
+  .week-selector { display: flex; gap: 6px; flex-wrap: wrap; }
+  .week-btn { padding: 6px 12px; font-size: 12px; }
+  .week-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+  /* TABS */
+  .tabs {
+    padding: 0 40px;
+    display: flex; gap: 2px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+  }
+  .tab {
+    padding: 14px 22px;
+    font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color .2s, border-color .2s;
+    font-family: 'DM Mono', monospace;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+
+  /* MAIN */
+  main { padding: 32px 40px; }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-size: 11px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase;
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* SCORE CARDS */
+  .score-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .score-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .2s, transform .2s;
+  }
+  .score-card:hover { border-color: rgba(255,255,255,0.15); transform: translateY(-2px); }
+  .score-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  }
+  .score-card.green::before { background: var(--green); }
+  .score-card.red::before { background: var(--red); }
+  .score-card.amber::before { background: var(--amber); }
+  .score-card.neutral::before { background: var(--gray); }
+  .score-label { font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; font-family: 'DM Mono', monospace; margin-bottom: 10px; }
+  .score-value { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+  .score-card.green .score-value { color: var(--green); }
+  .score-card.red .score-value { color: var(--red); }
+  .score-card.amber .score-value { color: var(--amber); }
+  .score-card.neutral .score-value { color: var(--gray); }
+  .score-sub { font-size: 11px; color: var(--muted); }
+
+  /* TABLE */
+  .table-wrap {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+  .table-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .table-title { font-size: 13px; font-weight: 700; letter-spacing: .5px; }
+  .table-sub { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    padding: 10px 16px;
+    font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
+    font-family: 'DM Mono', monospace; font-weight: 500;
+    text-align: left;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 10px 16px;
+    font-size: 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .cat-row td {
+    background: var(--bg3);
+    font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--accent2); font-family: 'DM Mono', monospace;
+    padding: 8px 16px;
+    font-weight: 600;
+  }
+
+  /* STATUS BADGE */
+  .badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 22px;
+    border-radius: 5px;
+    font-size: 11px; font-weight: 700; font-family: 'DM Mono', monospace;
+  }
+  .badge.V { background: rgba(16,185,129,.15); color: var(--green); }
+  .badge.R { background: rgba(239,68,68,.15); color: var(--red); }
+  .badge.O { background: rgba(245,158,11,.15); color: var(--amber); }
+  .badge.N { background: rgba(100,116,139,.15); color: var(--gray); }
+
+  /* FILIALE COLUMNS */
+  .filiale-name { font-weight: 600; font-size: 11px; color: var(--accent2); }
+  .num-cell { font-family: 'DM Mono', monospace; font-size: 12px; text-align: right; }
+  .num-cell.good { color: var(--green); }
+  .num-cell.bad { color: var(--red); }
+  .num-cell.warn { color: var(--amber); }
+
+  /* BAR CHART */
+  .bar-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; }
+  .bar-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 20px;
+  }
+  .bar-card-title { font-size: 12px; font-weight: 700; margin-bottom: 16px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .bar-name { font-size: 11px; color: var(--muted); width: 120px; flex-shrink: 0; font-family: 'DM Mono', monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-track { flex: 1; height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; transition: width .8s cubic-bezier(.4,0,.2,1); }
+  .bar-val { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--muted); width: 40px; text-align: right; }
+
+  /* PANEL SECTIONS */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* WEEK TREND */
+  .trend-table td.up { color: var(--green); font-family: 'DM Mono', monospace; }
+  .trend-table td.down { color: var(--red); font-family: 'DM Mono', monospace; }
+  .trend-table td.flat { color: var(--gray); font-family: 'DM Mono', monospace; }
+
+  @media (max-width: 768px) {
+    header, .filters, .tabs, main { padding-left: 16px; padding-right: 16px; }
+    .bar-grid { grid-template-columns: 1fr; }
+    .score-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-badge">V</div>
+    <div class="logo-text">
+      <div class="title">VIGIL</div>
+      <div class="sub">Vista Group Holding · Conformité</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="date-badge">MàJ : 13/04/2026</div>
+    <div class="update-dot"></div>
+  </div>
+</header>
+
+<div class="filters">
+  <span class="filter-label">Filiale</span>
+  <select id="filiale-select" onchange="updateFiliale()">
+    <option value="groupe">Consolidation Groupe</option>
+    <option value="SGBF">SGBF</option>
+    <option value="VBB">VBB</option>
+    <option value="Vista Gui">Vista Guinée</option>
+    <option value="Vista Bank Guinee">Vista Bank Guinée</option>
+    <option value="Vista Bank Sierra Leone">Vista Bank Sierra Leone</option>
+    <option value="Vista Bank Gambie">Vista Bank Gambie</option>
+    <option value="Vista Bank Mozambique">Vista Bank Mozambique</option>
+    <option value="Vista Bank France">Vista Bank France</option>
+    <option value="Vista Bank Tchad">Vista Bank Tchad</option>
+  </select>
+  <span class="filter-label" style="margin-left:16px">Période</span>
+  <div class="week-selector">
+    <button class="week-btn" onclick="setWeek(12, this)">S12</button>
+    <button class="week-btn" onclick="setWeek(13, this)">S13</button>
+    <button class="week-btn" onclick="setWeek(14, this)">S14</button>
+    <button class="week-btn active" onclick="setWeek(15, this)">S15</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('groupe', this)">Vue Groupe</div>
+  <div class="tab" onclick="switchTab('gouvernance', this)">Gouvernance</div>
+  <div class="tab" onclick="switchTab('aml', this)">AML / KYC</div>
+  <div class="tab" onclick="switchTab('sanctions', this)">Sanctions</div>
+  <div class="tab" onclick="switchTab('historique', this)">Historique</div>
+</div>
+
+<main>
+
+  <!-- PANEL : VUE GROUPE -->
+  <div class="panel active" id="panel-groupe">
+    <div class="section-title">Synthèse consolidée — 9 filiales — S12 à S15</div>
+
+    <div class="score-grid">
+      <div class="score-card red">
+        <div class="score-label">Moy. Insertion Procédures</div>
+        <div class="score-value">17.8%</div>
+        <div class="score-sub">Objectif : 95%</div>
+      </div>
+      <div class="score-card red">
+        <div class="score-label">Moy. Présence ETP</div>
+        <div class="score-value">24.2%</div>
+        <div class="score-sub">Objectif : 98%</div>
+      </div>
+      <div class="score-card red">
+        <div class="score-label">Moy. Progression Formations</div>
+        <div class="score-value">23.3%</div>
+        <div class="score-sub">Objectif : 100%</div>
+      </div>
+      <div class="score-card neutral">
+        <div class="score-label">Plans d'actions échus</div>
+        <div class="score-value">26</div>
+        <div class="score-sub">Objectif : 0</div>
+      </div>
+      <div class="score-card red">
+        <div class="score-label">Taux Clôture Plans</div>
+        <div class="score-value">0%</div>
+        <div class="score-sub">Objectif : 100%</div>
+      </div>
+      <div class="score-card neutral">
+        <div class="score-label">PSF en défaillance</div>
+        <div class="score-value">0</div>
+        <div class="score-sub">Objectif : 0 ✓</div>
+      </div>
+    </div>
+
+    <div class="bar-grid">
+      <div class="bar-card">
+        <div class="bar-card-title">Taux insertion procédures par filiale</div>
+        <div id="bars-insertion"></div>
+      </div>
+      <div class="bar-card">
+        <div class="bar-card-title">Taux présence ETP par filiale</div>
+        <div id="bars-etp"></div>
+      </div>
+    </div>
+
+    <div class="section-title">Tableau consolidé — Indicateurs groupe S15</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Indicateur</th>
+            <th>SGBF</th><th>VBB</th><th>V.Gui</th>
+            <th>V.Gn</th><th>V.SL</th><th>V.Gam</th>
+            <th>V.Moz</th><th>V.Fr</th><th>V.Tchad</th>
+            <th>MOY.</th><th>Obj.</th><th>Statut</th>
+          </tr>
+        </thead>
+        <tbody id="groupe-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PANEL : GOUVERNANCE -->
+  <div class="panel" id="panel-gouvernance">
+    <div class="section-title">Indicateurs de gouvernance — VBB — S12 à S15</div>
+    <div class="table-wrap">
+      <table class="trend-table">
+        <thead>
+          <tr>
+            <th>Indicateur</th>
+            <th>S12</th><th>S13</th><th>S14</th><th>S15</th>
+            <th>Variation</th><th>Objectif</th><th>Statut</th>
+          </tr>
+        </thead>
+        <tbody id="gouv-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PANEL : AML/KYC -->
+  <div class="panel" id="panel-aml">
+    <div class="section-title">Indicateurs AML / KYC — VBB — S12 à S15</div>
+    <div class="table-wrap">
+      <table class="trend-table">
+        <thead>
+          <tr>
+            <th>Indicateur</th>
+            <th>S12</th><th>S13</th><th>S14</th><th>S15</th>
+            <th>Variation</th><th>Objectif</th><th>Statut</th>
+          </tr>
+        </thead>
+        <tbody id="aml-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PANEL : SANCTIONS -->
+  <div class="panel" id="panel-sanctions">
+    <div class="section-title">Indicateurs Sanctions — VBB — S12 à S15</div>
+    <div class="table-wrap">
+      <table class="trend-table">
+        <thead>
+          <tr>
+            <th>Indicateur</th>
+            <th>S12</th><th>S13</th><th>S14</th><th>S15</th>
+            <th>Variation</th><th>Objectif</th><th>Statut</th>
+          </tr>
+        </thead>
+        <tbody id="sanc-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PANEL : HISTORIQUE -->
+  <div class="panel" id="panel-historique">
+    <div class="section-title">Historique hebdomadaire — Vista Guinée</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Semaine</th>
+            <th>Insertion Proc.</th>
+            <th>Présence ETP</th>
+            <th>Progression Form.</th>
+            <th>Plans échus</th>
+            <th>Taux clôture</th>
+            <th>Maîtrise PSF</th>
+          </tr>
+        </thead>
+        <tbody id="hist-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const filiales = ['SGBF','VBB','Vista Gui','Vista Bank Guinee','Vista Bank Sierra Leone','Vista Bank Gambie','Vista Bank Mozambique','Vista Bank France','Vista Bank Tchad'];
+const filialesShort = ['SGBF','VBB','V.Gui','V.Gn','V.SL','V.Gam','V.Moz','V.Fr','V.Tchad'];
+
+const groupeData = {
+  gouvernance: [
+    { ind: "Taux insertion procédures", vals: [0, 0, 1, 0, 0, 0, 0, 0, 0.603], moy: 0.178, obj: 0.95, st: 'R' },
+    { ind: "Taux présence ETP", vals: [0.875, 0, 0.5, 0, 0, 0, 0, 0, 0.8], moy: 0.242, obj: 0.98, st: 'R' },
+    { ind: "Taux dispo outils", vals: [0, 0, 0, 0, 0, 0, 0, 0, 0], moy: 0, obj: 0.99, st: 'R' },
+    { ind: "Poids effectifs conformité", vals: [0.044, 0, 0.013, 0, 0, 0, 0, 0, 0.029], moy: 0.009, obj: null, st: 'R' },
+    { ind: "Taux progression formations", vals: [0.925, 0, 0.669, 0, 0, 0, 0, 0, 0.5], moy: 0.233, obj: 1, st: 'R' },
+    { ind: "Plans d'actions échus", vals: [4, 0, 14, 0, 0, 0, 0, 0, 8], moy: 26, obj: 0, st: '—' },
+    { ind: "PSF en défaillance", vals: [0,0,0,0,0,0,0,0,0], moy: 0, obj: 0, st: '—' },
+    { ind: "Décisions process T3/T4", vals: [0,0,0,0,0,0,0,0,0], moy: 0, obj: 0, st: '—' },
+    { ind: "Taux clôture plans actions", vals: [0,0,0,0,0,0,0,0,0], moy: 0, obj: 1, st: 'R' },
+    { ind: "Maîtrise PSF conformités", vals: [0,0,0,0,0,0,0,0,0], moy: 0, obj: 0.86, st: 'R' },
+  ],
+  aml: [
+    { ind: "Taux présentation CAC dossiers VR", vals: [0,0,0,0,0,0,0,0,0.571], moy: 0.063, obj: 1, st: 'R' },
+    { ind: "Nb refus dossiers VR au CAC", vals: [0,0,0,0,0,0,0,0,0], moy: 0, obj: 0, st: '—' },
+    { ind: "Taux révision cumulé", vals: [0.239,0,0,0,0,0,0,0,0.762], moy: 0.111, obj: 1, st: 'R' },
+    { ind: "Conformité Escalades PEP HR", vals: [0,0,0,0,0,0,0,0,0.615], moy: 0.068, obj: 1, st: 'R' },
+    { ind: "Stock alertes transactions", vals: [0,0,0,0,0,0,0,0,0], moy: 0, obj: null, st: '—' },
+    { ind: "Âge moyen alertes transactions", vals: [0,0,0,0,0,0,0,0,0], moy: 0, obj: null, st: '—' },
+    { ind: "Taux validation opérations espèces", vals: [0,0,1,0,0,0,0,0,1.179], moy: 0.242, obj: null, st: 'R' },
+  ],
+  sanctions: [
+    { ind: "Stock alertes name screening", vals: [0,0,0,0,0,0,0,0,0], moy: 0, obj: null, st: '—' },
+    { ind: "Âge moyen alertes name screening", vals: [0,0,0,0,0,0,0,0,0], moy: 0, obj: null, st: '—' },
+    { ind: "Nb alertes transactions screening", vals: [0,0,0,0,0,0,0,0,0], moy: 0, obj: null, st: '—' },
+    { ind: "Taux dérogations valides", vals: [0,0,0,0,0,0,0,0,0.75], moy: 0.083, obj: null, st: '—' },
+    { ind: "Nb VSD remontés", vals: [0,0,0,0,0,0,0,0,0], moy: 0, obj: null, st: '—' },
+    { ind: "Nb whistleblowing", vals: [0,0,0,0,0,0,0,0,0], moy: 0, obj: null, st: '—' },
+  ]
+};
+
+const gouvFiliale = [
+  { ind: "Taux insertion procédures", s: [0.952,0.952,1,1], var: 0, obj: 0.95, st: 'V' },
+  { ind: "Taux présence ETP", s: [0.375,0.5,0.5,0.5], var: 0, obj: 0.98, st: 'R' },
+  { ind: "Taux dispo outils", s: [0.3,0.3,0,0], var: 0, obj: 0.99, st: '—' },
+  { ind: "Poids effectifs conformité", s: [0.013,0.013,0.013,0.013], var: 0, obj: null, st: '—' },
+  { ind: "Taux progression formations", s: [1,1,0.352,0.669], var: 0.317, obj: 1, st: 'R' },
+  { ind: "Plans d'actions échus", s: [4,4,4,0], var: -4, obj: 0, st: '—' },
+  { ind: "PSF en défaillance", s: [0,0,0,0], var: 0, obj: 0, st: '—' },
+  { ind: "Décisions process T3/T4", s: [0,0,0,0], var: 0, obj: 0, st: '—' },
+  { ind: "Taux clôture plans actions", s: [0.364,0.300,0.300,0.300], var: 0, obj: 1, st: 'R' },
+  { ind: "Maîtrise PSF conformités", s: [0.9,0.9,0.9,0], var: -0.9, obj: 0.86, st: '—' },
+];
+
+const amlFiliale = [
+  { ind: "Taux présentation CAC dossiers VR", s: ['—','—','—','—'], var: '—', obj: 1, st: 'V' },
+  { ind: "Nb refus dossiers VR au CAC", s: [0,0,0,0], var: 0, obj: 0, st: '—' },
+  { ind: "Taux révision cumulé", s: ['—','—','—','—'], var: '—', obj: 1, st: 'V' },
+  { ind: "Conformité Escalades PEP HR", s: [0,0,0,0], var: 0, obj: 1, st: 'R' },
+  { ind: "Stock alertes transactions", s: [0,0,0,0], var: 0, obj: null, st: '—' },
+  { ind: "Âge moyen alertes transactions", s: [0,0,0,0], var: 0, obj: null, st: '—' },
+  { ind: "Nb DSB effectuées", s: [0,0,0,0], var: 0, obj: null, st: '—' },
+  { ind: "Demandes enquêtes en suspens", s: [0,0,0,0], var: 0, obj: null, st: '—' },
+  { ind: "Taux validation opérations espèces", s: [1,1,1,1], var: 0, obj: null, st: '—' },
+];
+
+const sancFiliale = [
+  { ind: "Stock alertes name screening", s: [0,0,0,0], var: 0, obj: null, st: '—' },
+  { ind: "Âge moyen alertes name screening", s: [0,0,0,0], var: 0, obj: null, st: '—' },
+  { ind: "Alertes transactions screening", s: [0,0,0,0], var: 0, obj: null, st: '—' },
+  { ind: "Âge moyen alertes transactions", s: [0,0,0,0], var: 0, obj: null, st: '—' },
+  { ind: "Alertes screening bloquées", s: [0,0,0,0], var: 0, obj: null, st: '—' },
+  { ind: "Taux dérogations valides", s: ['—','—','—','—'], var: '—', obj: null, st: '—' },
+  { ind: "Nb VSD remontés", s: [0,0,0,0], var: 0, obj: null, st: '—' },
+  { ind: "Nb Negative News", s: [0,0,0,0], var: 0, obj: null, st: '—' },
+  { ind: "Nb whistleblowing", s: [0,0,0,0], var: 0, obj: null, st: '—' },
+];
+
+const histData = [
+  { s:'S1',  ins:0.492, etp:0.5, form:0.98, ech:11, clo:0.389, psf:1 },
+  { s:'S2',  ins:0.540, etp:0.5, form:0.98, ech:11, clo:0.389, psf:1 },
+  { s:'S3',  ins:0.540, etp:0.375, form:0.98, ech:11, clo:0.389, psf:1 },
+  { s:'S4',  ins:0.556, etp:0.375, form:0.98, ech:11, clo:0.389, psf:0.9 },
+  { s:'S5',  ins:0.556, etp:0.5, form:0.98, ech:11, clo:0.389, psf:0.9 },
+  { s:'S6',  ins:0.556, etp:0.375, form:0.98, ech:11, clo:0.389, psf:0.9 },
+  { s:'S7',  ins:0.556, etp:0.375, form:0.99, ech:15, clo:0.375, psf:0.9 },
+  { s:'S8',  ins:0.556, etp:0.5, form:0.99, ech:15, clo:0.375, psf:0.9 },
+  { s:'S9',  ins:0.556, etp:0.5, form:0.997, ech:15, clo:0.375, psf:0.9 },
+  { s:'S10', ins:0.556, etp:0.5, form:0.997, ech:15, clo:0.375, psf:0.9 },
+  { s:'S11', ins:0.873, etp:0.375, form:1, ech:14, clo:0.364, psf:0.9 },
+  { s:'S12', ins:0.952, etp:0.375, form:1, ech:14, clo:0.364, psf:0.9 },
+  { s:'S13', ins:0.952, etp:0.5, form:1, ech:14, clo:0.300, psf:0.9 },
+  { s:'S14', ins:1.000, etp:0.5, form:0.352, ech:14, clo:0.300, psf:0.9 },
+  { s:'S15', ins:1.000, etp:0.5, form:0.669, ech:14, clo:0.300, psf:0 },
+];
+
+function fmt(v) {
+  if (v === '—' || v === null || v === undefined) return '<span style="color:var(--gray)">—</span>';
+  if (typeof v === 'number') {
+    if (v > 1) return '<span class="num-cell">' + v.toFixed(0) + '</span>';
+    if (v === 0) return '<span class="num-cell" style="color:var(--muted)">0%</span>';
+    return '<span class="num-cell">' + (v*100).toFixed(1) + '%</span>';
+  }
+  return v;
+}
+
+function badge(st) {
+  if (st === 'V') return '<span class="badge V">V</span>';
+  if (st === 'R') return '<span class="badge R">R</span>';
+  if (st === 'O') return '<span class="badge O">O</span>';
+  return '<span class="badge N">—</span>';
+}
+
+function buildGroupeTable() {
+  const tbody = document.getElementById('groupe-tbody');
+  const cats = [
+    { label: 'GOUVERNANCE', rows: groupeData.gouvernance },
+    { label: 'AML / KYC', rows: groupeData.aml },
+    { label: 'SANCTIONS', rows: groupeData.sanctions },
+  ];
+  let html = '';
+  cats.forEach(cat => {
+    html += `<tr class="cat-row"><td colspan="12">${cat.label}</td></tr>`;
+    cat.rows.forEach(r => {
+      html += `<tr><td style="font-size:11px">${r.ind}</td>`;
+      r.vals.forEach(v => { html += `<td style="text-align:right;font-family:'DM Mono',monospace;font-size:11px">${typeof v==='number'&&v>0?(v>1?v.toFixed(0):(v*100).toFixed(0)+'%'):'<span style="color:var(--muted)">0</span>'}</td>`; });
+      html += `<td style="text-align:right;font-family:'DM Mono',monospace;font-size:12px;font-weight:600">${typeof r.moy==='number'&&r.moy>0?(r.moy>1?r.moy.toFixed(0):(r.moy*100).toFixed(1)+'%'):'0'}</td>`;
+      html += `<td style="text-align:right;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${r.obj!==null?(r.obj>1?r.obj:(r.obj*100)+'%'):'—'}</td>`;
+      html += `<td>${badge(r.st)}</td></tr>`;
+    });
+  });
+  tbody.innerHTML = html;
+}
+
+function buildTrendTable(tbodyId, data) {
+  const tbody = document.getElementById(tbodyId);
+  let html = '';
+  data.forEach(r => {
+    html += `<tr><td style="font-size:11px">${r.ind}</td>`;
+    r.s.forEach(v => {
+      html += `<td style="text-align:right;font-family:'DM Mono',monospace;font-size:11px">${fmt(v)}</td>`;
+    });
+    const vStr = r.var === '—' ? '<span style="color:var(--gray)">—</span>'
+      : typeof r.var === 'number' && r.var > 0 ? `<span class="up">▲ ${(r.var*100).toFixed(1)}%</span>`
+      : typeof r.var === 'number' && r.var < 0 ? `<span class="down">▼ ${(Math.abs(r.var)*100).toFixed(1)}%</span>`
+      : `<span class="flat">= 0</span>`;
+    html += `<td>${vStr}</td>`;
+    html += `<td style="text-align:right;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${r.obj!==null&&r.obj!==undefined?(typeof r.obj==='number'&&r.obj<=1?(r.obj*100)+'%':r.obj):'—'}</td>`;
+    html += `<td>${badge(r.st)}</td></tr>`;
+  });
+  tbody.innerHTML = html;
+}
+
+function buildBars() {
+  const insData = filiales.map((f,i) => ({ name: filialesShort[i], val: groupeData.gouvernance[0].vals[i] }));
+  const etpData = filiales.map((f,i) => ({ name: filialesShort[i], val: groupeData.gouvernance[1].vals[i] }));
+  const colors = ['#3b82f6','#06b6d4','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#14b8a6','#f97316'];
+
+  function renderBars(containerId, data) {
+    const max = Math.max(...data.map(d=>d.val), 0.001);
+    document.getElementById(containerId).innerHTML = data.map((d,i) =>
+      `<div class="bar-row">
+        <div class="bar-name">${d.name}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${(d.val/1)*100}%;background:${colors[i]}"></div></div>
+        <div class="bar-val">${(d.val*100).toFixed(0)}%</div>
+      </div>`
+    ).join('');
+  }
+  renderBars('bars-insertion', insData);
+  renderBars('bars-etp', etpData);
+}
+
+function buildHist() {
+  const tbody = document.getElementById('hist-tbody');
+  tbody.innerHTML = histData.map(r => `
+    <tr>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--accent2)">${r.s}</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace;font-size:11px">${(r.ins*100).toFixed(1)}%</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace;font-size:11px">${(r.etp*100).toFixed(1)}%</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace;font-size:11px">${(r.form*100).toFixed(1)}%</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace;font-size:11px">${r.ech}</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace;font-size:11px">${(r.clo*100).toFixed(1)}%</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace;font-size:11px">${(r.psf*100).toFixed(0)}%</td>
+    </tr>`
+  ).join('');
+}
+
+function switchTab(id, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-' + id).classList.add('active');
+}
+
+function setWeek(w, el) {
+  document.querySelectorAll('.week-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function updateFiliale() {}
+
+// Init
+buildGroupeTable();
+buildTrendTable('gouv-tbody', gouvFiliale);
+buildTrendTable('aml-tbody', amlFiliale);
+buildTrendTable('sanc-tbody', sancFiliale);
+buildBars();
+buildHist();
+</script>
+</body>
+</html>
